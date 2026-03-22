@@ -1,0 +1,1 @@
+# Code permettant de vérifier que la DCT est mathématiquement correcte

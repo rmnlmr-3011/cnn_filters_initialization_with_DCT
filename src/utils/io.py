@@ -1,0 +1,1 @@
+# Code pour sauvegarder les résultats (config d'un run (JSON), historique d'entrainement (CSV), filtres/poids (NPZ))

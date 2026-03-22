@@ -1,0 +1,5 @@
+# Hyperparamètres globaux, communs à chaque modèle (a redefinir en temps voulu)
+batch_size: 128
+epochs: 150
+optimizer: sgd
+learning_rate: 0.1

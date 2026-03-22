@@ -1,0 +1,1 @@
+# On définira ici l'architecture commune du modèle Resnet20

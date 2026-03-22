@@ -1,0 +1,1 @@
+# Code pour appliquer DCT 2D sur les filtres (on passe des poids bruts des filtres à une description en DCT des filtres)

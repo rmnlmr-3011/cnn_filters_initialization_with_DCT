@@ -1,0 +1,1 @@
+# On implémentera ici les fonctions d'initialisation des filtres

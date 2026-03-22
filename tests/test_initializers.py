@@ -1,0 +1,1 @@
+# Code permettant de vérifier que les initialisations des filtres produisent des poids valides
