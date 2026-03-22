@@ -19,3 +19,55 @@ La structure du code :
 - runs/ contient tous les résultats des entraînements 
 
 - tests/ contient tous les résultats des tests
+
+Arborescence :
+
+cnn-dct-init/
+├── README.md
+├── .gitignore
+├── environment.yml
+├── configs/
+│   ├── base.yaml
+│   ├── init_he.yaml
+│   ├── init_sigma.yaml
+│   ├── init_grad.yaml
+│   ├── init_dctlow.yaml
+│   └── init_dctlow_noise.yaml
+├── src/
+│   ├── __init__.py
+│   ├── data/
+│   │   ├── __init__.py
+│   │   └── loaders.py
+│   ├── models/
+│   │   ├── __init__.py
+│   │   ├── resnet20.py
+│   │   └── initializers.py
+│   ├── training/
+│   │   ├── __init__.py
+│   │   ├── callbacks.py
+│   │   ├── evaluate.py
+│   │   └── train.py
+│   ├── analysis/
+│   │   ├── __init__.py
+│   │   ├── dct.py
+│   │   ├── filter_metrics.py
+│   │   └── plots.py
+│   └── utils/
+│       ├── __init__.py
+│       ├── config.py
+│       ├── io.py
+│       ├── logging.py
+│       └── seed.py
+├── notebooks/
+│   ├── 01_sanity_checks.ipynb
+│   ├── 02_filter_analysis.ipynb
+│   └── 03_results_figures.ipynb
+├── reports/
+│   ├── figures/
+│   └── tables/
+├── runs/
+└── tests/
+    ├── test_dct.py
+    ├── test_initializers.py
+    ├── test_metrics.py
+    └── test_resnet20.py

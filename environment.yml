@@ -1,1 +1,20 @@
 # Faudra y mettre les infos de l'environnement pour la reproductibilité
+
+# V1 à potentiellement modifier :
+name: cnn-dct-init
+channels:
+  - conda-forge
+  - defaults
+dependencies:
+  - python=3.10
+  - numpy
+  - scipy
+  - pandas
+  - matplotlib
+  - scikit-learn
+  - pyyaml
+  - pytest
+  - jupyter
+  - pip
+  - pip:
+      - tensorflow

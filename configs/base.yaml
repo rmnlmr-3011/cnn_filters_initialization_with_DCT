@@ -1,5 +1,43 @@
-# Hyperparamètres globaux, communs à chaque modèle (a redefinir en temps voulu)
-batch_size: 128
-epochs: 150
-optimizer: sgd
-learning_rate: 0.1
+# Hyperparamètres globaux, communs à chaque modèle 
+
+#(a redefinir en temps voulu)
+
+
+
+experiment_name: base_experiment
+seed: 42
+
+dataset:
+  name: cifar10
+  data_dir: null
+  validation_split: 0.1
+  normalize: true
+  augment: true
+
+model:
+  name: resnet20
+  input_shape: [32, 32, 3]
+  num_classes: 10
+
+initializer:
+  name: he
+  scale_like_he: true
+  noise_std: 0.0
+  low_freq_components: [[0, 0], [1, 0], [0, 1]]
+
+training:
+  optimizer: sgd
+  learning_rate: 0.1
+  momentum: 0.9
+  weight_decay: 0.0001
+  batch_size: 128
+  epochs: 5
+  scheduler: multistep
+  scheduler_milestones: [3, 4]
+  scheduler_gamma: 0.1
+
+runtime:
+  run_root: runs
+  save_filter_epochs: [0, 1, 5]
+  deterministic: true
+  verbose: 1
