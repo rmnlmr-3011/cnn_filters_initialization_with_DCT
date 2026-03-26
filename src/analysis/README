@@ -1,0 +1,22 @@
+Fonctions:
+1. dct2 et idct2
+Fonctions pour la DCT 2D et l’inverse. 
+Elles permettent de :
+analyser les filtres appris en fréquence ;
+reconstruire des filtres 3×3 à partir de composantes fréquentielles choisies.
+
+2. get_filter(model, layer, sev=False)
+Cette fonction parcourt les couches du modèle, garde les convolutions, puis renvoie les poids d’une couche choisie. Elle filtre en priorité les convolutions 3x3, et peut aussi inclure du 7x7 si sev=True. 
+
+3. getSymAntiSymTF(filter)
+Cette fonction sépare un noyau en partie symétrique et antisymétrique à partir de flips horizontaux, verticaux et rotation. 
+
+4. getSobelTF(f)
+Elle calcule une orientation locale à partir d’un noyau de type Sobel construit avec getDerivKernels. C’est une brique intermédiaire utilisée par getDominantAngle.
+
+5. getDominantAngle(filters)
+Cette fonction combine la partie antisymétrique et l’orientation Sobel pour donner un angle dominant par filtre.
+
+6. topKfilters et topKchannels
+Ces fonctions classent les filtres ou les canaux par magnitude.Fonctions utiles pour visualiser les filtres les plus forts.
+
