@@ -3,16 +3,14 @@
 #(a redefinir en temps voulu)
 
 
-
-experiment_name: base_experiment
+experiment_name: baseline_resnet20_cifar10_he
 seed: 42
 
 dataset:
   name: cifar10
-  data_dir: null
   validation_split: 0.1
   normalize: true
-  augment: true
+  augment: false
 
 model:
   name: resnet20
@@ -21,23 +19,59 @@ model:
 
 initializer:
   name: he
-  scale_like_he: true
-  noise_std: 0.0
-  low_freq_components: [[0, 0], [1, 0], [0, 1]]
 
 training:
   optimizer: sgd
   learning_rate: 0.1
   momentum: 0.9
-  weight_decay: 0.0001
-  batch_size: 128
+  batch_size: 32
   epochs: 5
-  scheduler: multistep
-  scheduler_milestones: [3, 4]
-  scheduler_gamma: 0.1
+
+  scheduler:
+    type: multistep
+    milestones: [0.5, 0.75]
+    gamma: 0.1
 
 runtime:
   run_root: runs
-  save_filter_epochs: [0, 1, 5]
   deterministic: true
   verbose: 1
+
+
+# experiment_name: base_experiment
+# seed: 42
+
+# dataset:
+#   name: cifar10
+#   data_dir: null
+#   validation_split: 0.1
+#   normalize: true
+#   augment: false
+
+# model:
+#   name: resnet20
+#   input_shape: [32, 32, 3]
+#   num_classes: 10
+
+# initializer:
+#   name: he
+#   scale_like_he: true
+#   noise_std: 0.0
+#   low_freq_components: [[0, 0], [1, 0], [0, 1]]
+
+# training:
+#   optimizer: sgd
+#   learning_rate: 0.1
+#   momentum: 0.9
+#   weight_decay: 0.0001
+#   batch_size: 32
+#   epochs: 5
+#   scheduler: multistep
+#   scheduler_milestones: [3, 4]
+#   scheduler_gamma: 0.1
+
+# runtime:
+#   run_root: runs
+#   #save_filter_epochs: [0, 1, 5]
+#   deterministic: true
+#   verbose: 1

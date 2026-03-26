@@ -1,65 +1,71 @@
 # Code pour lancer un entraînement complet
 
 
-from pathlib import Path
-import json
-import os
-import sys
-sys.path.append(os.path.abspath(".."))
-import tensorflow as tf
-import pandas as pd
+# Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope Process
+# & "C:\Users\rmnlm\anaconda3\shell\condabin\conda-hook.ps1"
+# conda activate sys809
 
+
+
+from pathlib import Path
+import tensorflow as tf
 
 from src.data.loaders import load_cifar10, split_train_val
 from src.models.resnet20 import build_resnet20
+from src.training.callbacks import make_multistep_scheduler, LearningRateLogger
+from src.utils.io import save_json, save_history_csv, make_run_dir
+from src.utils.logging import get_logger
+from src.utils.seed import set_seed
+from src.utils.config import load_config
+from src.training.evaluate import evaluate_model
+
 
 
 def main():
-    
     # Configuration des hyperparamètres baseline
+    config = load_config("configs/base.yaml")
 
-    seed = 42
-    epochs = 5
-    batch_size = 32
-    learning_rate = 0.1
-    momentum = 0.9
+    seed = config["seed"]
 
-    tf.random.set_seed(seed)
+    epochs = config["training"]["epochs"]
+    batch_size = config["training"]["batch_size"]
+    learning_rate = config["training"]["learning_rate"]
+    momentum = config["training"]["momentum"]
 
-    # Configuration de la run
+    validation_split = config["dataset"]["validation_split"]
+    normalize = config["dataset"]["normalize"]
 
-    run_config = {
-        "model": "ResNet20",
-        "dataset": "CIFAR10",
-        "initializer": "He",
-        "seed": seed,
-        "epochs": epochs,
-        "batch_size": batch_size,
-        "optimizer": "SGD",
-        "learning_rate": learning_rate,
-        "momentum": momentum,
-    }
-    output_dir = Path("runs/baseline_resnet20_cifar10_he")
-    output_dir.mkdir(parents=True, exist_ok=True)
+    input_shape = tuple(config["model"]["input_shape"])
+    num_classes = config["model"]["num_classes"]
 
-    with open(output_dir / "config.json", "w", encoding="utf-8") as f:
-        json.dump(run_config, f, indent=4)
+    run_root = config["runtime"]["run_root"]
+    verbose = config["runtime"]["verbose"]
+    deterministic = config["runtime"]["deterministic"]
+
+    run_config = config
+
+    set_seed(seed, deterministic=deterministic)
+
+    output_dir = make_run_dir(
+        base_dir=run_root,
+        prefix=config["experiment_name"]
+    )
+
+    logger = get_logger("train")
+    save_json(run_config, output_dir / "config.json")
 
     # Chargement des données
+    (x_train, y_train), (x_test, y_test) = load_cifar10(normalize=normalize)
+    (x_train, y_train), (x_val, y_val) = split_train_val(x_train, y_train, val_ratio=validation_split, seed=seed)
 
-    (x_train, y_train), (x_test, y_test) = load_cifar10()
-    (x_train, y_train), (x_val, y_val) = split_train_val(x_train, y_train, val_ratio=0.1, seed=42)
-
-    print(x_train.shape, y_train.shape)
-    print(x_val.shape, y_val.shape)
-    print(x_test.shape, y_test.shape)
+    logger.info(f"x_train: {x_train.shape}, y_train: {y_train.shape}")
+    logger.info(f"x_val: {x_val.shape}, y_val: {y_val.shape}")
+    logger.info(f"x_test: {x_test.shape}, y_test: {y_test.shape}")
 
     # Construction du modèle 
-
-    model = build_resnet20(input_shape=(32, 32, 3), num_classes=10)
+    model = build_resnet20(input_shape=input_shape, num_classes=num_classes)
 
     # Compilation du modèle 
-
     optimizer = tf.keras.optimizers.SGD(
         learning_rate=learning_rate,
         momentum=momentum
@@ -71,14 +77,25 @@ def main():
         metrics=["accuracy"]
     )
 
-    # Entraînement du modèle 
+    # Callbacks
+    lr_scheduler = make_multistep_scheduler(
+        initial_lr=learning_rate,
+        total_epochs=epochs
+    )
 
-    print("===================================")
-    print("Run configuration")
-    print("===================================")
+    callbacks = [
+        lr_scheduler,
+        LearningRateLogger(),
+    ]
+
+
+    # Entraînement du modèle 
+    logger.info("===================================")
+    logger.info("Run configuration")
+    logger.info("===================================")
     for key, value in run_config.items():
-        print(f"{key}: {value}")
-    print("===================================")
+        logger.info(f"{key}: {value}")
+    logger.info("===================================")
 
     history = model.fit(
         x_train,
@@ -86,47 +103,32 @@ def main():
         validation_data=(x_val, y_val),
         epochs=epochs,
         batch_size=batch_size,
-        verbose=1
+        callbacks=callbacks,
+        verbose=verbose
     )
-
     
-    history_df = pd.DataFrame(history.history)
-    history_df.insert(0, "epoch", range(1, len(history_df) + 1))
-    history_df.to_csv(output_dir / "history.csv", index=False)
+    save_history_csv(history, output_dir / "history.csv")
+
 
     # Évaluation du modèle
-
-    test_loss, test_acc = model.evaluate(x_test, y_test, verbose=1)
+    test_metrics = evaluate_model(model, x_test, y_test)
 
     summary = {
         "final_train_loss": float(history.history["loss"][-1]),
         "final_train_accuracy": float(history.history["accuracy"][-1]),
         "final_val_loss": float(history.history["val_loss"][-1]),
         "final_val_accuracy": float(history.history["val_accuracy"][-1]),
-        "test_loss": float(test_loss),
-        "test_accuracy": float(test_acc),
+        **test_metrics,
     }
 
-    with open(output_dir / "summary.json", "w", encoding="utf-8") as f:
-        json.dump(summary, f, indent=4)
-
-    print(f"Test loss: {test_loss:.4f}")
-    print(f"Test accuracy: {test_acc:.4f}")
-    print(f"Outputs saved in: {output_dir}")
-
-    # -----------------------------
-    # 7. Sauvegarde minimale
-    # -----------------------------
-    output_dir = Path("runs/baseline_resnet20_cifar10_he")
-    output_dir.mkdir(parents=True, exist_ok=True)
-
-    with open(output_dir / "history.json", "w", encoding="utf-8") as f:
-        json.dump(history.history, f, indent=4)
+    save_json(summary, output_dir / "summary.json")
 
     model.save(output_dir / "model.keras")
 
-    print("Run terminé avec succès.")
-    print(f"Historique sauvegardé dans : {output_dir / 'history.json'}")
+    logger.info(f"Test loss: {test_metrics['test_loss']:.4f}")
+    logger.info(f"Test accuracy: {test_metrics['test_accuracy']:.4f}")
+    logger.info(f"Outputs saved in: {output_dir}")
+    logger.info("Run terminé avec succès.")
 
 
 if __name__ == "__main__":
