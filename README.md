@@ -50,8 +50,14 @@ cnn-dct-init/
 │   ├── analysis/
 │   │   ├── __init__.py
 │   │   ├── dct.py
+│   │   ├── dct_bases.py
+│   │   ├── filter_analysis.py
 │   │   ├── filter_metrics.py
-│   │   └── plots.py
+│   │   ├── model_filters.py
+│   │   ├── plots.py
+│   │   ├── pretrained_patterns.py
+│   │   ├── README_phase2.md
+│   │   └── run_filter_analysis.py
 │   └── utils/
 │       ├── __init__.py
 │       ├── config.py
@@ -71,3 +77,6 @@ cnn-dct-init/
     ├── test_initializers.py
     ├── test_metrics.py
     └── test_resnet20.py
+
+
+
