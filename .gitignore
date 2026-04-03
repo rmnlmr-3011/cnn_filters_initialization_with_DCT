@@ -33,3 +33,7 @@ htmlcov/
 
 # Misc
 *.log
+
+# Pytest
+.pytest_cache/
+__pycache__/

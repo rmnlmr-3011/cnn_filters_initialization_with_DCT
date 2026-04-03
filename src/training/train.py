@@ -65,6 +65,8 @@ def main():
     # Construction du modèle 
     model = build_resnet20(input_shape=input_shape, num_classes=num_classes)
 
+    #model = initit_filters(model, config)
+
     # Compilation du modèle 
     optimizer = tf.keras.optimizers.SGD(
         learning_rate=learning_rate,
