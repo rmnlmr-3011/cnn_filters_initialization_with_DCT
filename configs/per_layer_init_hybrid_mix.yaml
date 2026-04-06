@@ -1,0 +1,44 @@
+experiment_name: resnet20_cifar10_hybrid_mix
+seed: 42
+
+dataset:
+  name: cifar10
+  validation_split: 0.1
+  normalize: true
+  augment: false
+
+model:
+  name: resnet20
+  input_shape: [32, 32, 3]
+  num_classes: 10
+
+initializer:
+  mode: per_layer
+  default:
+    name: he
+
+  layer_map:
+    stem_conv:
+      name: sigma
+      scale: 1.0
+      seed: 42
+
+    group1_block1_conv1:
+      name: grad_vertical_pure
+      scale: 1.0
+
+    group1_block1_conv2:
+      name: dctlow
+      scale: 1.0
+      seed: 42
+
+    group2_block1_conv1:
+      name: grad
+      scale: 1.0
+      seed: 42
+
+    group3_block1_conv1:
+      name: dctlow_noise
+      scale: 1.0
+      noise_std: 0.05
+      seed: 42

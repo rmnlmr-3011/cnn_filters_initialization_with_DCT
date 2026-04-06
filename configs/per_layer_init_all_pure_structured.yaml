@@ -1,0 +1,35 @@
+experiment_name: resnet20_cifar10_all_pure_structured
+seed: 42
+
+dataset:
+  name: cifar10
+  validation_split: 0.1
+  normalize: true
+  augment: false
+
+model:
+  name: resnet20
+  input_shape: [32, 32, 3]
+  num_classes: 10
+
+initializer:
+  mode: per_layer
+  default:
+    name: he
+
+  layer_map:
+    stem_conv:
+      name: sigma_pure
+      scale: 1.0
+
+    group1_block1_conv1:
+      name: grad_vertical_pure
+      scale: 1.0
+
+    group1_block1_conv2:
+      name: grad_horizontal_pure
+      scale: 1.0
+
+    group2_block1_conv1:
+      name: sigma_pure
+      scale: 1.0
