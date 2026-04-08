@@ -52,7 +52,7 @@ def analyze_model(model):
     filter_df = (
         kernel_df
         .groupby(["layer_idx", "layer_name", "out_channel"], as_index=False)
-        .apply(_aggregate_filter, include_groups=False)
+        .apply(_aggregate_filter)
         .reset_index(drop=True)
     )
 
@@ -67,7 +67,7 @@ def analyze_model(model):
     layer_df = (
         kernel_df
         .groupby(["layer_idx", "layer_name"], as_index=False)
-        .apply(_aggregate_layer, include_groups=False)
+        .apply(_aggregate_layer)
         .reset_index(drop=True)
     )
 
@@ -79,13 +79,10 @@ def analyze_model(model):
         "n_conv3x3_layers": int(layer_df.shape[0]),
         "n_total_kernels": int(kernel_df.shape[0]),
         "n_total_filters": int(filter_df.shape[0]),
-
         "global_total_energy_mean": float(kernel_df["total_energy"].mean()),
         "global_total_energy_std": float(kernel_df["total_energy"].std()),
-
         "global_low_frequency_ratio_mean": float(kernel_df["low_frequency_ratio"].mean()),
         "global_low_frequency_ratio_std": float(kernel_df["low_frequency_ratio"].std()),
-
         "global_beta_sq_mean": float(kernel_df["beta_sq"].mean()),
         "global_beta_sq_std": float(kernel_df["beta_sq"].std()),
     }

@@ -7,6 +7,9 @@
 
 
 # Pour éxécuter depuis terminal avec modèle de test :
+# Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope Process
+# & "C:\Users\rmnlm\anaconda3\shell\condabin\conda-hook.ps1"
+# conda activate sys809
 # python -m src.analysis.run_filter_analysis --model_path runs/baseline_resnet20_cifar10_he/model.keras --output_dir runs/baseline_resnet20_cifar10_he/analysis
 
 

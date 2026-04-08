@@ -1,6 +1,6 @@
 # Code pour calculer les métriques associées aux filtres, 3 blocs :
 	# A. Métriques DCT
-	# B. Symétrie et anti-symétrie
+	# B. Symétrie et anti-symétrie (beta)
 	# C. Agrégations
 
 import numpy as np
