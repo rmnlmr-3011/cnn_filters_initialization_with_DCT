@@ -15,6 +15,75 @@ from src.utils.config import load_config
 from src.utils.io import save_json, save_history_csv, make_run_dir
 from src.utils.logging import get_logger
 from src.utils.seed import set_seed
+from src.models.initializers import get_initializer
+
+def _build_initializer_from_spec(spec: dict, global_seed: int = None):
+    """
+    Construit un initializer Keras à partir d'un bloc YAML du type :
+    {
+        "name": "dctlow_noise",
+        "scale": 1.0,
+        "noise_std": 0.05,
+        "seed": 42,
+    }
+    """
+    if "name" not in spec:
+        raise ValueError(f"Initializer spec missing 'name': {spec}")
+
+    init_name = spec["name"]
+    init_seed = spec.get("seed", global_seed)
+
+    kwargs = {
+        k: v
+        for k, v in spec.items()
+        if k not in ("name", "seed", "mode")
+    }
+
+    return get_initializer(init_name, seed=init_seed, **kwargs)
+
+
+def _resolve_model_initialization(config: dict):
+    """
+    Retourne :
+    - conv_initializer
+    - layer_init_map
+
+    Cas supportés :
+    1) initializer global
+    2) initializer per_layer
+    """
+    seed = config.get("seed", None)
+    initializer_cfg = config.get("initializer", {})
+
+    if not initializer_cfg:
+        # fallback par défaut
+        return get_initializer("he", seed=seed), None
+
+    mode = initializer_cfg.get("mode", "global")
+
+    if mode == "global":
+        conv_initializer = _build_initializer_from_spec(initializer_cfg, global_seed=seed)
+        return conv_initializer, None
+
+    if mode == "per_layer":
+        if "default" not in initializer_cfg:
+            raise ValueError("Per-layer initializer config requires a 'default' block.")
+
+        default_initializer = _build_initializer_from_spec(
+            initializer_cfg["default"],
+            global_seed=seed
+        )
+
+        raw_layer_map = initializer_cfg.get("layer_map", {})
+        layer_init_map = {
+            layer_name: _build_initializer_from_spec(layer_spec, global_seed=seed)
+            for layer_name, layer_spec in raw_layer_map.items()
+        }
+
+        return default_initializer, layer_init_map
+
+    raise ValueError(f"Unsupported initializer mode: {mode}")
+
 
 
 def run_training(config_path: Union[str, Path] = "configs/base.yaml") -> Path:
@@ -120,10 +189,16 @@ def run_training(config_path: Union[str, Path] = "configs/base.yaml") -> Path:
     # =========================
     # Construction du modèle
     # =========================
+
+    conv_initializer, layer_init_map = _resolve_model_initialization(config)
+
     model = build_resnet20(
         input_shape=input_shape,
-        num_classes=num_classes
+        num_classes=num_classes,
+        conv_initializer=conv_initializer,
+        layer_init_map=layer_init_map,
     )
+    
 
     # Ici, plus tard si nécessaire :
     # model = init_filters(model, config)

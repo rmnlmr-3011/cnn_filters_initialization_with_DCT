@@ -7,6 +7,12 @@
 # cd cnn_filters_initialization_with_DCT
 # python -m src.pipelines.train_and_analyze
 
+# python -m src.pipelines.train_and_analyze --config path/to/your.yaml
+
+
+
+# "configs/init_sigma_pure.yaml"
+
 import sys
 from pathlib import Path
 import argparse
