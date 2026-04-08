@@ -1,4 +1,4 @@
-experiment_name: init_resnet20_cifar10_grad
+experiment_name: init_resnet20_cifar10_grad_vertical_pure
 seed: 42
 
 dataset:
@@ -13,7 +13,7 @@ model:
   num_classes: 10
 
 initializer:
-  name: grad
+  name: grad_vertical_pure
   scale: 1.0
 
 training:
