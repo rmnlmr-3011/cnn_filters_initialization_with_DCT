@@ -140,6 +140,88 @@ def save_checkpoint_series_outputs(df: pd.DataFrame, analysis_dir: Path) -> None
         ylabel="Global beta² mean",
     )
 
+    _plot_metric(
+        df_plot=df_plot,
+        x_col="epoch",
+        y_col="global_sigma_energy_ratio_mean",
+        output_path=plots_dir / "sigma_energy_ratio_mean_vs_epoch.png",
+        title="Global sigma energy ratio mean vs epoch",
+        ylabel="Global sigma energy ratio mean",
+    )
+
+    _plot_metric(
+        df_plot=df_plot,
+        x_col="epoch",
+        y_col="global_grad_x_energy_ratio_mean",
+        output_path=plots_dir / "grad_x_energy_ratio_mean_vs_epoch.png",
+        title="Global grad_x energy ratio mean vs epoch",
+        ylabel="Global grad_x energy ratio mean",
+    )
+
+    _plot_metric(
+        df_plot=df_plot,
+        x_col="epoch",
+        y_col="global_grad_y_energy_ratio_mean",
+        output_path=plots_dir / "grad_y_energy_ratio_mean_vs_epoch.png",
+        title="Global grad_y energy ratio mean vs epoch",
+        ylabel="Global grad_y energy ratio mean",
+    )
+
+    _plot_metric(
+        df_plot=df_plot,
+        x_col="epoch",
+        y_col="global_grad_xy_energy_ratio_mean",
+        output_path=plots_dir / "grad_xy_energy_ratio_mean_vs_epoch.png",
+        title="Global grad_xy energy ratio mean vs epoch",
+        ylabel="Global grad_xy energy ratio mean",
+    )
+
+    df_layers = build_layer_checkpoint_dataframe(analysis_dir)
+
+    _plot_layer_epoch_heatmap(
+        df_layers=df_layers,
+        value_col="beta_sq_mean",
+        output_path=plots_dir / "beta_sq_mean_layer_epoch_heatmap.png",
+        title="Layer beta_sq mean across epochs",
+    )
+
+    _plot_layer_epoch_heatmap(
+        df_layers=df_layers,
+        value_col="low_frequency_ratio_mean",
+        output_path=plots_dir / "low_frequency_ratio_mean_layer_epoch_heatmap.png",
+        title="Layer low frequency ratio mean across epochs",
+    )
+
+    _plot_layer_epoch_heatmap(
+        df_layers=df_layers,
+        value_col="sigma_energy_ratio_mean",
+        output_path=plots_dir / "sigma_energy_ratio_mean_layer_epoch_heatmap.png",
+        title="Layer sigma energy ratio mean across epochs",
+    )
+
+    _plot_layer_epoch_heatmap(
+        df_layers=df_layers,
+        value_col="grad_x_energy_ratio_mean",
+        output_path=plots_dir / "grad_x_energy_ratio_mean_layer_epoch_heatmap.png",
+        title="Layer grad_x energy ratio mean across epochs",
+    )
+
+    _plot_layer_epoch_heatmap(
+        df_layers=df_layers,
+        value_col="grad_y_energy_ratio_mean",
+        output_path=plots_dir / "grad_y_energy_ratio_mean_layer_epoch_heatmap.png",
+        title="Layer grad_y energy ratio mean across epochs",
+    )
+
+    _plot_layer_epoch_heatmap(
+        df_layers=df_layers,
+        value_col="grad_xy_energy_ratio_mean",
+        output_path=plots_dir / "grad_xy_energy_ratio_mean_layer_epoch_heatmap.png",
+        title="Layer grad_xy energy ratio mean across epochs",
+    )
+
+
+# Création des heatmaps
 
 def build_checkpoint_series(run_dir: Path) -> pd.DataFrame:
     """
@@ -165,3 +247,79 @@ def build_checkpoint_series(run_dir: Path) -> pd.DataFrame:
     logger.info("Checkpoint series summary completed successfully.")
 
     return df
+
+def build_layer_checkpoint_dataframe(analysis_dir: Path) -> pd.DataFrame:
+    """
+    Construit un DataFrame avec une ligne = une couche pour un checkpoint donné.
+    Colonnes attendues:
+      - checkpoint_label
+      - epoch
+      - layer_idx
+      - layer_name
+      - métriques couche
+    """
+    analysis_dir = Path(analysis_dir)
+    rows = []
+
+    for subdir in sorted(analysis_dir.iterdir()):
+        if not subdir.is_dir():
+            continue
+
+        label = subdir.name
+
+        # Ignorer tout ce qui n'est pas un checkpoint de type epoch_XXX
+        if not re.fullmatch(r"epoch_\d+", label):
+            continue
+
+        epoch = parse_checkpoint_label(label)
+
+        layer_csv = subdir / "layer_metrics.csv"
+        if not layer_csv.exists():
+            continue
+
+        layer_df = pd.read_csv(layer_csv)
+        layer_df["checkpoint_label"] = label
+        layer_df["epoch"] = epoch
+        rows.append(layer_df)
+
+    if len(rows) == 0:
+        raise FileNotFoundError(
+            f"No layer_metrics.csv files found in numeric checkpoint subdirectories of {analysis_dir}"
+        )
+
+    df = pd.concat(rows, ignore_index=True)
+    df = df.sort_values(by=["epoch", "layer_idx"]).reset_index(drop=True)
+    return df
+
+
+
+
+def _plot_layer_epoch_heatmap(
+    df_layers: pd.DataFrame,
+    value_col: str,
+    output_path: Path,
+    title: str,
+) -> None:
+    pivot_df = df_layers.pivot(
+        index="layer_idx",
+        columns="epoch",
+        values=value_col,
+    ).sort_index()
+
+    plt.figure(figsize=(10, 6))
+    plt.imshow(pivot_df.values, aspect="auto", origin="lower")
+    plt.colorbar(label=value_col)
+    plt.xticks(
+        ticks=range(len(pivot_df.columns)),
+        labels=pivot_df.columns,
+    )
+    plt.yticks(
+        ticks=range(len(pivot_df.index)),
+        labels=pivot_df.index,
+    )
+    plt.xlabel("Epoch")
+    plt.ylabel("Layer index")
+    plt.title(title)
+    plt.tight_layout()
+    plt.savefig(output_path, dpi=150)
+    plt.close()

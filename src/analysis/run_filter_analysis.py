@@ -21,6 +21,26 @@ from src.analysis.filter_analysis import analyze_model
 from src.utils.io import save_json
 from src.utils.logging import get_logger
 
+from src.models.initializers import (
+    SigmaPureInitializer,
+    SigmaInitializer,
+    GradVerticalPureInitializer,
+    GradHorizontalPureInitializer,
+    GradInitializer,
+    DCTLowInitializer,
+    DCTLowNoiseInitializer,
+)
+
+CUSTOM_OBJECTS = {
+    "SigmaPureInitializer": SigmaPureInitializer,
+    "SigmaInitializer": SigmaInitializer,
+    "GradVerticalPureInitializer": GradVerticalPureInitializer,
+    "GradHorizontalPureInitializer": GradHorizontalPureInitializer,
+    "GradInitializer": GradInitializer,
+    "DCTLowInitializer": DCTLowInitializer,
+    "DCTLowNoiseInitializer": DCTLowNoiseInitializer,
+}
+
 
 def main():
     parser = argparse.ArgumentParser(description="Run filter analysis on a trained Keras model.")
@@ -60,7 +80,7 @@ def main():
     logger.info("===================================")
 
     logger.info("Loading model...")
-    model = tf.keras.models.load_model(model_path)
+    model = tf.keras.models.load_model(model_path, custom_objects=CUSTOM_OBJECTS)
 
     logger.info("Running filter analysis...")
     kernel_df, filter_df, layer_df, summary = analyze_model(model)

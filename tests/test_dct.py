@@ -1,4 +1,4 @@
-# Tests permettant de s'assurer que la reconstruction des filtres est bonne, que l'énergue est conservée et qu'il y a une coh.rence dans le batch DCT
+# Tests permettant de s'assurer que la reconstruction des filtres est bonne, que l'énergie est conservée et qu'il y a une coh.rence dans le batch DCT
 
 import numpy as np
 

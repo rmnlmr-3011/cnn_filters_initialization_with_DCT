@@ -9,6 +9,26 @@ from src.analysis.filter_analysis import analyze_model
 from src.utils.io import save_json
 from src.utils.logging import get_logger
 
+from src.models.initializers import (
+    SigmaPureInitializer,
+    SigmaInitializer,
+    GradVerticalPureInitializer,
+    GradHorizontalPureInitializer,
+    GradInitializer,
+    DCTLowInitializer,
+    DCTLowNoiseInitializer,
+)
+
+CUSTOM_OBJECTS = {
+    "SigmaPureInitializer": SigmaPureInitializer,
+    "SigmaInitializer": SigmaInitializer,
+    "GradVerticalPureInitializer": GradVerticalPureInitializer,
+    "GradHorizontalPureInitializer": GradHorizontalPureInitializer,
+    "GradInitializer": GradInitializer,
+    "DCTLowInitializer": DCTLowInitializer,
+    "DCTLowNoiseInitializer": DCTLowNoiseInitializer,
+}
+
 
 def list_checkpoint_models(run_dir: Path) -> List[Tuple[str, Path]]:
     """
@@ -50,7 +70,7 @@ def analyze_single_model(model_path: Path, output_dir: Path, logger=None) -> Non
     if logger is not None:
         logger.info(f"Loading model: {model_path}")
 
-    model = tf.keras.models.load_model(model_path)
+    model = tf.keras.models.load_model(model_path, custom_objects=CUSTOM_OBJECTS)
 
     if logger is not None:
         logger.info(f"Running filter analysis for: {model_path.name}")

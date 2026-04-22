@@ -6,7 +6,7 @@ from typing import Optional
 
 from src.analysis.dct import idct2
 
-
+@tf.keras.utils.register_keras_serializable(package="Custom")
 class SigmaPureInitializer(tf.keras.initializers.Initializer):
     """
     Initialisation sigma pure : filtre constant 3x3 sans bruit ni aléatoire.
@@ -53,7 +53,7 @@ class SigmaPureInitializer(tf.keras.initializers.Initializer):
             "noise_std": self.noise_std,
         }
 
-
+@tf.keras.utils.register_keras_serializable(package="Custom")
 class SigmaInitializer(tf.keras.initializers.Initializer):
     """
     Initialisation custom qui génère des filtres 3x3 symétriques et lisses.
@@ -116,7 +116,7 @@ class SigmaInitializer(tf.keras.initializers.Initializer):
             "noise_std": self.noise_std,
         }
 
-
+@tf.keras.utils.register_keras_serializable(package="Custom")
 class GradVerticalPureInitializer(tf.keras.initializers.Initializer):
     """
     Initialisation déterministe avec un filtre de gradient vertical pur.
@@ -171,7 +171,7 @@ class GradVerticalPureInitializer(tf.keras.initializers.Initializer):
             "noise_std": self.noise_std,
         }
 
-
+@tf.keras.utils.register_keras_serializable(package="Custom")
 class GradHorizontalPureInitializer(tf.keras.initializers.Initializer):
     """
     Initialisation déterministe avec un filtre de gradient horizontal pur.
@@ -226,7 +226,7 @@ class GradHorizontalPureInitializer(tf.keras.initializers.Initializer):
             "noise_std": self.noise_std,
         }
 
-
+@tf.keras.utils.register_keras_serializable(package="Custom")
 class GradInitializer(tf.keras.initializers.Initializer):
     """
     Initialisation custom basée sur des motifs de gradient 3x3.
@@ -315,7 +315,7 @@ class GradInitializer(tf.keras.initializers.Initializer):
             "noise_std": self.noise_std,
         }
 
-
+@tf.keras.utils.register_keras_serializable(package="Custom")
 class DCTLowInitializer(tf.keras.initializers.Initializer):
     """
     Initialisation custom qui favorise les basses fréquences en espace DCT.
@@ -379,7 +379,7 @@ class DCTLowInitializer(tf.keras.initializers.Initializer):
             "noise_std": self.noise_std,
         }
 
-
+@tf.keras.utils.register_keras_serializable(package="Custom")
 class DCTLowNoiseInitializer(tf.keras.initializers.Initializer):
     """
     Initialisation custom basée sur DCT-low avec ajout d'un petit bruit spatial.
@@ -445,7 +445,7 @@ class DCTLowNoiseInitializer(tf.keras.initializers.Initializer):
             "noise_std": self.noise_std,
         }
 
-
+@tf.keras.utils.register_keras_serializable(package="Custom")
 def get_initializer(name: str, seed: Optional[int] = None, **kwargs):
     """
     Retourne un initialiseur Keras selon son nom.

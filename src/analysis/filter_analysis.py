@@ -85,6 +85,14 @@ def analyze_model(model):
         "global_low_frequency_ratio_std": float(kernel_df["low_frequency_ratio"].std()),
         "global_beta_sq_mean": float(kernel_df["beta_sq"].mean()),
         "global_beta_sq_std": float(kernel_df["beta_sq"].std()),
+        "global_sigma_energy_ratio_mean": float(kernel_df["sigma_energy_ratio"].mean()),
+        "global_sigma_energy_ratio_std": float(kernel_df["sigma_energy_ratio"].std()),
+        "global_grad_x_energy_ratio_mean": float(kernel_df["grad_x_energy_ratio"].mean()),
+        "global_grad_x_energy_ratio_std": float(kernel_df["grad_x_energy_ratio"].std()),
+        "global_grad_y_energy_ratio_mean": float(kernel_df["grad_y_energy_ratio"].mean()),
+        "global_grad_y_energy_ratio_std": float(kernel_df["grad_y_energy_ratio"].std()),
+        "global_grad_xy_energy_ratio_mean": float(kernel_df["grad_xy_energy_ratio"].mean()),
+        "global_grad_xy_energy_ratio_std": float(kernel_df["grad_xy_energy_ratio"].std()),
     }
 
     return kernel_df, filter_df, layer_df, summary

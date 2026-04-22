@@ -17,6 +17,8 @@ from src.utils.logging import get_logger
 from src.utils.seed import set_seed
 from src.models.initializers import get_initializer
 
+
+
 def _build_initializer_from_spec(spec: dict, global_seed: int = None):
     """
     Construit un initializer Keras à partir d'un bloc YAML du type :
@@ -84,7 +86,15 @@ def _resolve_model_initialization(config: dict):
 
     raise ValueError(f"Unsupported initializer mode: {mode}")
 
-
+def _evaluate_split(model: tf.keras.Model, x, y, split_name: str, verbose: int = 0) -> dict:
+    """
+    Évalue le modèle sur un split donné et retourne un dict homogène.
+    """
+    loss, accuracy = model.evaluate(x, y, verbose=verbose)
+    return {
+        f"{split_name}_loss": float(loss),
+        f"{split_name}_accuracy": float(accuracy),
+    }
 
 def run_training(config_path: Union[str, Path] = "configs/base.yaml") -> Path:
     """
@@ -213,7 +223,7 @@ def run_training(config_path: Union[str, Path] = "configs/base.yaml") -> Path:
         loss="sparse_categorical_crossentropy",
         metrics=["accuracy"]
     )
-
+    
     # =========================
     # Callbacks
     # =========================
@@ -264,6 +274,8 @@ def run_training(config_path: Union[str, Path] = "configs/base.yaml") -> Path:
     # =========================
     # Entraînement
     # =========================
+
+
     history = model.fit(
         x_train,
         y_train,
@@ -277,24 +289,30 @@ def run_training(config_path: Union[str, Path] = "configs/base.yaml") -> Path:
     save_history_csv(history, output_dir / "history.csv")
 
     # =========================
-    # Évaluation finale
+    # Évaluation finale cohérente
     # =========================
+    train_metrics = _evaluate_split(model, x_train, y_train, "final_train", verbose=0)
+    val_metrics = _evaluate_split(model, x_val, y_val, "final_val", verbose=0)
     test_metrics = evaluate_model(model, x_test, y_test)
 
     summary = {
-        "final_train_loss": float(history.history["loss"][-1]),
-        "final_train_accuracy": float(history.history["accuracy"][-1]),
-        "final_val_loss": float(history.history["val_loss"][-1]),
-        "final_val_accuracy": float(history.history["val_accuracy"][-1]),
+        **train_metrics,
+        **val_metrics,
         **test_metrics,
     }
 
     save_json(summary, output_dir / "summary.json")
     model.save(output_dir / "model.keras")
 
-    logger.info(f"Test loss: {test_metrics['test_loss']:.4f}")
-    logger.info(f"Test accuracy: {test_metrics['test_accuracy']:.4f}")
+    logger.info(f"Final train loss: {summary['final_train_loss']:.4f}")
+    logger.info(f"Final train accuracy: {summary['final_train_accuracy']:.4f}")
+    logger.info(f"Final val loss: {summary['final_val_loss']:.4f}")
+    logger.info(f"Final val accuracy: {summary['final_val_accuracy']:.4f}")
+    logger.info(f"Test loss: {summary['test_loss']:.4f}")
+    logger.info(f"Test accuracy: {summary['test_accuracy']:.4f}")
     logger.info(f"Outputs saved in: {output_dir}")
     logger.info("Run terminé avec succès.")
 
     return output_dir
+
+    

@@ -22,8 +22,6 @@ Thumbs.db
 
 # Project outputs
 runs/
-reports/figures/
-reports/tables/
 
 # Python tooling
 .pytest_cache/

@@ -99,6 +99,53 @@ def compute_low_frequency_ratio(
     return ratio
 
 
+def compute_single_dct_energy_ratio(
+    dct_energy: np.ndarray,
+    row: int,
+    col: int,
+) -> np.ndarray:
+    """
+    Calcule, pour chaque noyau, le ratio d'énergie d'une composante DCT donnée :
+        dct_energy[row, col] / énergie_totale
+
+    Paramètres
+    ----------
+    dct_energy:
+        Tableau 4D de shape (3, 3, in_channels, out_channels)
+    row, col:
+        Indices spatiaux de la composante DCT à extraire.
+
+    Retour
+    ------
+    np.ndarray
+        Tableau 2D de shape (in_channels, out_channels)
+    """
+    dct_energy = np.asarray(dct_energy, dtype=np.float64)
+
+    if dct_energy.ndim != 4:
+        raise ValueError(f"Expected a 4D array, got ndim={dct_energy.ndim}")
+
+    if dct_energy.shape[0] != 3 or dct_energy.shape[1] != 3:
+        raise ValueError(
+            f"Expected spatial shape (3, 3, in_channels, out_channels), got {dct_energy.shape}"
+        )
+
+    if not (0 <= row < 3 and 0 <= col < 3):
+        raise ValueError(f"Invalid DCT indices ({row}, {col}) for shape (3, 3, ...).")
+
+    total_energy = compute_total_energy(dct_energy)
+    component_energy = dct_energy[row, col, :, :]
+
+    ratio = np.divide(
+        component_energy,
+        total_energy,
+        out=np.zeros_like(component_energy, dtype=np.float64),
+        where=total_energy > 0,
+    )
+
+    return ratio
+
+
 # =========================
 # Bloc B — sym / antisym
 # =========================
@@ -177,6 +224,10 @@ def summarize_kernel_metrics(
     total_energy = compute_total_energy(dct_energy)[0, 0]
     low_freq_ratio = compute_low_frequency_ratio(dct_energy)[0, 0]
     beta_sq = compute_beta_sq(kernel_2d)
+    sigma_energy_ratio = compute_single_dct_energy_ratio(dct_energy, row=0, col=0)[0, 0]
+    grad_x_energy_ratio = compute_single_dct_energy_ratio(dct_energy, row=0, col=1)[0, 0]
+    grad_y_energy_ratio = compute_single_dct_energy_ratio(dct_energy, row=1, col=0)[0, 0]
+    grad_xy_energy_ratio = compute_single_dct_energy_ratio(dct_energy, row=1, col=1)[0, 0]
 
     coeff_flat = dct_coeffs[:, :, 0, 0].reshape(-1)
     energy_flat = dct_energy[:, :, 0, 0].reshape(-1)
@@ -189,9 +240,13 @@ def summarize_kernel_metrics(
         "total_energy": float(total_energy),
         "low_frequency_ratio": float(low_freq_ratio),
         "beta_sq": float(beta_sq),
+        "sigma_energy_ratio": float(sigma_energy_ratio),
+        "grad_x_energy_ratio": float(grad_x_energy_ratio),
+        "grad_y_energy_ratio": float(grad_y_energy_ratio),
+        "grad_xy_energy_ratio": float(grad_xy_energy_ratio),
     }
 
-    # Ajout des 9 coefficients DCT
+        # Ajout des 9 coefficients DCT
     for idx, value in enumerate(coeff_flat):
         summary[f"dct_coeff_{idx}"] = float(value)
 
@@ -227,6 +282,10 @@ def summarize_filter_metrics(kernel_metrics: list[dict]) -> dict:
     total_energy_vals = np.array([km["total_energy"] for km in kernel_metrics], dtype=np.float64)
     low_freq_vals = np.array([km["low_frequency_ratio"] for km in kernel_metrics], dtype=np.float64)
     beta_vals = np.array([km["beta_sq"] for km in kernel_metrics], dtype=np.float64)
+    sigma_vals = np.array([km["sigma_energy_ratio"] for km in kernel_metrics], dtype=np.float64)
+    grad_x_vals = np.array([km["grad_x_energy_ratio"] for km in kernel_metrics], dtype=np.float64)
+    grad_y_vals = np.array([km["grad_y_energy_ratio"] for km in kernel_metrics], dtype=np.float64)
+    grad_xy_vals = np.array([km["grad_xy_energy_ratio"] for km in kernel_metrics], dtype=np.float64)
 
     summary = {
         "layer_idx": int(layer_idx),
@@ -239,6 +298,14 @@ def summarize_filter_metrics(kernel_metrics: list[dict]) -> dict:
         "low_frequency_ratio_std": float(np.std(low_freq_vals)),
         "beta_sq_mean": float(np.mean(beta_vals)),
         "beta_sq_std": float(np.std(beta_vals)),
+        "sigma_energy_ratio_mean": float(np.mean(sigma_vals)),
+        "sigma_energy_ratio_std": float(np.std(sigma_vals)),
+        "grad_x_energy_ratio_mean": float(np.mean(grad_x_vals)),
+        "grad_x_energy_ratio_std": float(np.std(grad_x_vals)),
+        "grad_y_energy_ratio_mean": float(np.mean(grad_y_vals)),
+        "grad_y_energy_ratio_std": float(np.std(grad_y_vals)),
+        "grad_xy_energy_ratio_mean": float(np.mean(grad_xy_vals)),
+        "grad_xy_energy_ratio_std": float(np.std(grad_xy_vals)),
     }
 
     # Agrégation moyenne des coefficients DCT et de leur énergie
@@ -278,6 +345,10 @@ def summarize_layer_metrics(kernel_metrics: list[dict]) -> dict:
     total_energy_vals = np.array([km["total_energy"] for km in kernel_metrics], dtype=np.float64)
     low_freq_vals = np.array([km["low_frequency_ratio"] for km in kernel_metrics], dtype=np.float64)
     beta_vals = np.array([km["beta_sq"] for km in kernel_metrics], dtype=np.float64)
+    sigma_vals = np.array([km["sigma_energy_ratio"] for km in kernel_metrics], dtype=np.float64)
+    grad_x_vals = np.array([km["grad_x_energy_ratio"] for km in kernel_metrics], dtype=np.float64)
+    grad_y_vals = np.array([km["grad_y_energy_ratio"] for km in kernel_metrics], dtype=np.float64)
+    grad_xy_vals = np.array([km["grad_xy_energy_ratio"] for km in kernel_metrics], dtype=np.float64)
 
     summary = {
         "layer_idx": int(layer_idx),
@@ -291,6 +362,14 @@ def summarize_layer_metrics(kernel_metrics: list[dict]) -> dict:
         "low_frequency_ratio_std": float(np.std(low_freq_vals)),
         "beta_sq_mean": float(np.mean(beta_vals)),
         "beta_sq_std": float(np.std(beta_vals)),
+        "sigma_energy_ratio_mean": float(np.mean(sigma_vals)),
+        "sigma_energy_ratio_std": float(np.std(sigma_vals)),
+        "grad_x_energy_ratio_mean": float(np.mean(grad_x_vals)),
+        "grad_x_energy_ratio_std": float(np.std(grad_x_vals)),
+        "grad_y_energy_ratio_mean": float(np.mean(grad_y_vals)),
+        "grad_y_energy_ratio_std": float(np.std(grad_y_vals)),
+        "grad_xy_energy_ratio_mean": float(np.mean(grad_xy_vals)),
+        "grad_xy_energy_ratio_std": float(np.std(grad_xy_vals)),
     }
 
     coeff_keys = [k for k in first.keys() if k.startswith("dct_coeff_")]
@@ -308,185 +387,3 @@ def summarize_layer_metrics(kernel_metrics: list[dict]) -> dict:
 
     return summary
     
-
-
-
-
-##########################################################################
-
-# import numpy as np
-# import tensorflow as tf
-# from tensorflow.math import multiply, reduce_sum, reduce_mean,reduce_euclidean_norm
-# from tensorflow import transpose
-
-# from tensorflow.image import flip_up_down, flip_left_right, rot90
-
-# from cv2 import getDerivKernels
-
-
-
-# '''def getDominantAngle(filters):
-# 	theta = getSobelTF(filters)
-# 	print(filters.shape)
-# 	s, a = getSymAntiSymTF(filters)
-# 	a_mag = reduce_euclidean_norm(a, axis=[0,1])
-# 	s_mag = reduce_euclidean_norm(s, axis=[0,1])
-
-# 	mag = reduce_euclidean_norm(filters, axis=[0,1])
-
-
-# 	domTheta = []
-# 	for i in range(filters.shape[-1]):
-# 		x =(a_mag[:,i]*np.cos((theta[:,i]))).numpy()
-# 		y =( a_mag[:,i]*np.sin((theta[:,i]))).numpy()
-
-
-# 		cov = np.cov([x,y])
-# 		e_val, e_vec = np.linalg.eig(cov)
-# 		e_vec = e_vec[:, np.argmax(e_val)]
-# 		e_val = np.max(e_val)
-# 		if np.sign(e_vec[0]) != np.sign(x[np.argmax(np.abs(x))]):
-# 			e_vec *= -1
-# 		domTheta.append(np.arctan2(e_vec[1], e_vec[0]))
-# 	#x =a_mag[:,f_num]*np.cos((theta[:,f_num]))
-# 	#y = a_mag[:,f_num]*np.sin((theta[:,f_num]))
-
-# 	return np.array(domTheta)'''
-
-
-# def getDominantAngle(filters):
-# 	domTheta = []
-# 	vec = []
-# 	old_vec = []
-
-# 	_, a = getSymAntiSymTF(filters)
-# 	a_mag = reduce_euclidean_norm(a, axis=[0,1])
-# 	theta = getSobelTF(filters)
-# 	for i in range(filters.shape[-1]):
-
-# 		#print(a_mag.shape)
-# 		x =a_mag[:, i]*np.cos((theta[:, i]))
-# 		y = a_mag[:, i]*np.sin((theta[:, i]))
-
-# 		u_x = np.mean(x)
-# 		#print(u_x)
-# 		u_y = np.mean(y)
-# 		cov = np.cov([x, y])
-# 		e_val, e_vec = np.linalg.eigh(cov)
-# 		#print(e_val, e_vec)
-# 		e_vec = e_vec[:, np.argmax(e_val)]
-# 		e_val = np.max(e_val)
-
-# 		new_vec =    ((e_vec[0] * x + e_vec[1]*y)/(e_vec[0]**2+e_vec[1]**2))[:, None] * e_vec
-# 		new_vec = np.mean(new_vec, axis=0)
-
-# 		'''if any((np.sign(new_vec)-np.sign(e_vec))!=0) :
-# 			print("DOWN", e_vec, new_vec)
-# 		else:
-# 			print("OK", e_vec, new_vec)'''
-# 		'''if np.sign(e_vec[0]) != np.sign(x[np.argmax(np.abs(x))]):
-# 			e_vec *= -1'''
-# 			#print(e_val, e_vec)
-# 		#print(np.arctan2(e_vec[1], e_vec[0]))
-# 		domTheta.append(np.arctan2(new_vec[1], new_vec[0]))
-# 		vec.append(new_vec)
-# 		#old_vec.append(e_vec)
-
-# 	return np.array(vec), np.array(domTheta)#, old_vec
-
-
-# def getSobelTF(f):
-
-# 	ksize = f.shape[0]
-# 	sobel = getDerivKernels(1,0,ksize=ksize, normalize=True)
-# 	sobel_v = -np.expand_dims(np.expand_dims(np.outer(sobel[0], sobel[1]), -1),-1)  # * -1
-# 	sobel = getDerivKernels(0,1,ksize=ksize, normalize=True)
-# 	sobel_h = np.expand_dims(np.expand_dims(np.outer(sobel[0], sobel[1]), -1),-1)
-
-# 	#print(sobel_h, sobel_v)
-
-# 	s_h = reduce_sum(multiply(f, sobel_h), axis=[0,1])
-# 	s_v = reduce_sum(multiply(f, sobel_v), axis=[0,1])
-
-
-# 	'''sobel_v = np.expand_dims(np.expand_dims(np.array([[-1., -2., -1.], [0., 0., 0.], [1., 2., 1.]], dtype=np.float32)/-4., -1),-1)
-# 	sobel_h = np.expand_dims(np.expand_dims(np.array([[1., 0., -1.], [2., 0., -2.], [1., 0., -1.]], dtype=np.float32)/-4., -1) ,-1) 
-# 	#print(sobel_h, sobel_v)
-
-# 	s_h = reduce_sum(multiply(f, sobel_h), axis=[0,1])
-# 	s_v = reduce_sum(multiply(f, sobel_v), axis=[0,1])'''
-
-# 	return (np.arctan2(s_v,s_h))
-
-
-# def getSymAntiSymTF(filter):
-
-# 	#patches = extract_image_patches(filters, [1, k, k, 1],  [1, k, k, 1], rates = [1,1,1,1] , padding = 'VALID')
-# 	#print(patches)
-# 	'''a = filter[0,0,:,:]
-# 	b = filter[0,1,:,:]
-# 	c = filter[0,2,:,:]
-# 	d = filter[1,0,:,:]
-# 	e = filter[1,1,:,:]
-# 	f = filter[1,2,:,:]
-# 	g = filter[2,0,:,:]
-# 	h = filter[2,1,:,:]
-# 	i = filter[2,2,:,:]
-
-# 	fs1 = expand_dims(a+c+g+i, 0)/4
-# 	fs2 = expand_dims(b+d+f+h,0)/4
-# 	fs3= expand_dims(e, 0)
-
-# 	sym = stack([concat([fs1, fs2, fs1],  axis=0), 
-# 		concat([fs2, fs3, fs2], axis=0),
-# 		concat([fs1, fs2, fs1], axis=0)])
-		
-# 	anti = filter - sym'''
-
-# 	f_reshaped = transpose(filter, perm=[3, 0, 1, 2])
-# 	mat_flip_x = flip_left_right(f_reshaped)
-
-# 	mat_flip_y = flip_up_down(f_reshaped)
-# 	mat_flip_xy = flip_left_right(flip_up_down(f_reshaped))
-# 	#print(mat_flip_x.shape, mat_flip_y.shape, mat_flip_xy.shape)
-# 	sum = f_reshaped + mat_flip_x + mat_flip_y + mat_flip_xy
-	
-# 	mat_sum_rot_90 = rot90(sum)
-# 	#gc.collect()
-# 	#print("mat_sum_rot_90 shape " , mat_sum_rot_90.shape, self._name)
-	
-# 	#print("OUT SHAPE," , out.shape)
-# 	out = (sum + mat_sum_rot_90) / 8
-# 	sym = transpose(out, perm=[1, 2, 3, 0])
-# 	anti = filter - sym
-# 	return  sym, anti
-
-
-
-# Si on réutilise ces fonctions, remplacer get_filter par les fonctions créées dans model_filters.py 
-
-
-# def topKfilters(model, layer_num, k=10, sev=False):
-# 	#print(i, l.name)
-# 	filters = get_filter(model, layer_num, sev)
-
-# 	mag = reduce_euclidean_norm(filters, axis=[0,1])**2
-# 	avg_mag = reduce_mean(mag, axis=0)
-# 	idx = list(range(mag.shape[-1]))
-	
-# 	idx = [x for _, x in sorted(zip( avg_mag, idx), reverse=True)]
-# 	return idx[:int(np.floor(len(idx)*k/100))]
-
-
-# def topKchannels(model, layer_num, f_num, k=10, sev=False):
-# 	#print(i, l.name)
-# 	filters = get_filter(model, layer_num, sev)[:,:,:,f_num]
-
-# 	mag = reduce_euclidean_norm(filters, axis=[0,1])**2
-# 	#avg_mag = reduce_mean(mag, axis=0)
-# 	idx = list(range(mag.shape[-1]))
-# 	'''if int((k/100)*len(idx)) == 0:
-# 		return idx'''
-	
-# 	idx = [x for _, x in sorted(zip( mag, idx), reverse=True)]
-# 	return idx[:int(np.floor(len(idx)*k/100))]
